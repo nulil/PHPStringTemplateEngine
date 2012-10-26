@@ -98,9 +98,9 @@ class PhpStringTemplateEngine {
 			$arr = array(
 				'set'	 => create_function('&$var,$val', '$var=$val;'),
 				'echo'	 => create_function('$val', 'return $val;'),
-				'if'	 => create_function('$bool,$t_body,$f_body', '$ret = "";$body = $bool ? $t_body : $f_body;if ($body){ if (is_callable($body)){ $ret = call_user_func($body); }else{ $ret = $body; } } return $ret;'),
-				'while'	 => create_function('$terms,$body', '$ret = ""; if ($terms && is_callable($terms)){ while ($bool = call_user_func($terms, $bool)){ if (is_callable($body)){ $ret .= call_user_func($body); }else{ $ret .= $body; } } } return $ret;'),
-				'time'	 => create_function('$time,$body', 'if (!is_array($time)){ $time = intval($time); $time = 0 < $time ? array_fill(1,intval($time),"") : array(); } $ret = ""; foreach($time as $key => $val){ if (is_callable($body)){ $ret .= call_user_func($body, $key, $val); }else{ $ret .= $body; } } return $ret;'),
+				'if'	 => create_function('$bool,$t_body,$f_body', '$ret = \'\';$body = $bool ? $t_body : $f_body;if ($body){ if (is_callable($body)){ $ret = call_user_func($body); }else{ $ret = $body; } } return $ret;'),
+				'while'	 => create_function('$terms,$body', '$ret = \'\'; if ($terms && is_callable($terms)){ while ($bool = call_user_func($terms, $bool)){ if (is_callable($body)){ $ret .= call_user_func($body); }else{ $ret .= $body; } } } return $ret;'),
+				'time'	 => create_function('$time,$body', 'if (!is_array($time)){ $time = intval($time); $time = 0 < $time ? array_fill(1,intval($time),\'\') : array(); } $ret = \'\'; foreach($time as $key => $val){ if (is_callable($body)){ $ret .= call_user_func($body, $key, $val); }else{ $ret .= $body; } } return $ret;'),
 			);
 			$val	 = $arr;
 		}
@@ -123,8 +123,8 @@ class PhpStringTemplateEngine {
 
 		if (self::$_isClosure) {
 			$val['if'] = function($bool, $t_body, $f_body) use ($vars, $extract_type, $prefix) {
-						$body	 = $bool ? $t_body : $f_body;
 						$ret	 = '';
+						$body	 = $bool ? $t_body : $f_body;
 						if ($body) {
 							if (is_callable($body)) {
 								$ret = call_user_func($body);
