@@ -12,7 +12,7 @@ class PhpStringTemplateEngine {
 	private $_heredocTag;
 	static private $_isClosure = null;
 
-	public function __construct($string, array $vars = null, $extract_type = EXTR_PREFIX_SAME, $var_prefix = 'pste_') {
+	public function __construct($string, array $vars = null, $extract_type = EXTR_PREFIX_SAME, $var_prefix = 'var_') {
 		$this->_string		 = $string;
 		$this->_vars		 = $vars;
 		$this->_prefix		 = $extract_type;
@@ -39,7 +39,7 @@ class PhpStringTemplateEngine {
 		extract($this->_controlStatement());
 
 		if (!empty($this->_vars)) {
-			extract($this->_vars, EXTR_PREFIX_SAME, $this->_prefix);
+			extract($this->_vars, $this->_extractType, $this->_prefix);
 		}
 
 
