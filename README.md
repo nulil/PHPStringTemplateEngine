@@ -1,6 +1,6 @@
 # PHP String Template Engine
 
-PHP String Template Engine は、PHPの文字列内の変数展開を利用したテンプレートエンジンみたいなものです。
+PHPの文字列内の変数展開を利用した、テンプレートエンジンみたいなものです。
 
 作った理由は、ただ思いついたから。
 
