@@ -1,7 +1,12 @@
 <?php
 
 /**
+ * PhpStringTemplateEngine
  * 
+ * @author nulil <http://nulil.github.com>
+ * @copyright	Copyright &copy; 2012 nulil
+ * @link		
+ * @license		MIT License (http://www.opensource.org/licenses/mit-license.php)
  */
 class PhpStringTemplateEngine {
 
@@ -60,7 +65,7 @@ class PhpStringTemplateEngine {
 					$ret = "";
 					if ($terms && is_callable($terms)){
 						while ($bool = call_user_func($terms, $bool)){
-							if (is_callable($body)){	$ret .= call_user_func($body);	}else{	$ret .= $body;	}
+							if (is_callable($body)){ $ret .= call_user_func($body); }else{ $ret .= $body; }
 						}
 					}
 					return $ret;'),
@@ -71,7 +76,7 @@ class PhpStringTemplateEngine {
 					}
 					$ret = "";
 					foreach($time as $key => $val){
-						if (is_callable($body)){	$ret .= call_user_func($body, $key, $val);	}else{	$ret .= $body;	}
+						if (is_callable($body)){ $ret .= call_user_func($body, $key, $val); }else{ $ret .= $body; }
 					}
 					return $ret;'),
 			);
