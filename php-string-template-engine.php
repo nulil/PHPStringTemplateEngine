@@ -3,10 +3,10 @@
 /**
  * PhpStringTemplateEngine
  * 
- * @author nulil <http://nulil.github.com>
+ * @author nulil
  * @copyright	Copyright &copy; 2012 nulil
- * @link		
- * @license		MIT License (http://www.opensource.org/licenses/mit-license.php)
+ * @link		http://nulil.github.com
+ * @license	MIT License (http://www.opensource.org/licenses/mit-license.php)
  */
 class PhpStringTemplateEngine {
 
@@ -17,6 +17,13 @@ class PhpStringTemplateEngine {
 	private $_heredocTag;
 	static private $_isClosure = null;
 
+	/**
+	 * 
+	 * @param string $string
+	 * @param array $vars
+	 * @param int $extract_type
+	 * @param string $var_prefix
+	 */
 	public function __construct($string, array $vars = null, $extract_type = EXTR_PREFIX_SAME, $var_prefix = 'var_') {
 		$this->_string		 = $string;
 		$this->_vars		 = $vars;
@@ -36,12 +43,20 @@ class PhpStringTemplateEngine {
 		}
 	}
 
+	/**
+	 * expand
+	 * 
+	 * 変数を展開した文字列を返す
+	 * 
+	 * @method expand
+	 * @return string
+	 */
 	public function expand() {
 		if (empty($this->_string)) {
 			return '';
 		}
 
-		extract($this->_controlStatement());
+		extract($this->_createCcontrolStatement());
 
 		if (!empty($this->_vars)) {
 			extract($this->_vars, $this->_extractType, $this->_prefix);
@@ -54,58 +69,75 @@ class PhpStringTemplateEngine {
 ");
 	}
 
-	static private function _controlStatementForStatic() {
+	/**
+	 * cons
+	 * 
+	 * コンストラクタの代替呼び出し
+	 * 
+	 * @method cons
+	 * @param string $string
+	 * @param array $vars
+	 * @param int $extract_type
+	 * @param string $var_prefix
+	 * @return \self
+	 */
+	static public function cons($string, array $vars = null, $extract_type = EXTR_PREFIX_SAME, $var_prefix = 'var_') {
+		return new self($string, $vars, $extract_type, $var_prefix);
+	}
+
+	/**
+	 * 制御関数
+	 * 
+	 * @method _controlStatement
+	 * @staticvar null $val
+	 * @return array
+	 */
+	static private function _controlStatement() {
 		static $val = null;
 		if (null === $val) {
 			$arr = array(
 				'set'	 => create_function('&$var,$val', '$var=$val;'),
 				'echo'	 => create_function('$val', 'return $val;'),
-				'if'	 => create_function('$bool,$f1,$f2', '$f = $bool ? "f1" : "f2";if ($$f){	if (is_callable($$f)){	return call_user_func($$f);	}else{	return $$f;	}	}	return "";'),
-				'while'	 => create_function('$terms,$body', '
-					$ret = "";
-					if ($terms && is_callable($terms)){
-						while ($bool = call_user_func($terms, $bool)){
-							if (is_callable($body)){ $ret .= call_user_func($body); }else{ $ret .= $body; }
-						}
-					}
-					return $ret;'),
-				'time'	 => create_function('$time,$body', '
-					if (!is_array($time)){
-						$time = intval($time);
-						$time = 0 < $time ? array_fill(1,intval($time),"") : array();
-					}
-					$ret = "";
-					foreach($time as $key => $val){
-						if (is_callable($body)){ $ret .= call_user_func($body, $key, $val); }else{ $ret .= $body; }
-					}
-					return $ret;'),
+				'if'	 => create_function('$bool,$t_body,$f_body', '$ret = "";$body = $bool ? $t_body : $f_body;if ($body){ if (is_callable($body)){ $ret = call_user_func($body); }else{ $ret = $body; } } return $ret;'),
+				'while'	 => create_function('$terms,$body', '$ret = ""; if ($terms && is_callable($terms)){ while ($bool = call_user_func($terms, $bool)){ if (is_callable($body)){ $ret .= call_user_func($body); }else{ $ret .= $body; } } } return $ret;'),
+				'time'	 => create_function('$time,$body', 'if (!is_array($time)){ $time = intval($time); $time = 0 < $time ? array_fill(1,intval($time),"") : array(); } $ret = ""; foreach($time as $key => $val){ if (is_callable($body)){ $ret .= call_user_func($body, $key, $val); }else{ $ret .= $body; } } return $ret;'),
 			);
 			$val	 = $arr;
 		}
 		return $val;
 	}
 
-	private function &_controlStatement() {
+	/**
+	 * _createCcontrolStatement
+	 * 
+	 * 制御関数作成
+	 * 
+	 * @method _createCcontrolStatement
+	 * @return array
+	 */
+	private function &_createCcontrolStatement() {
 		$vars			 = $this->_vars;
 		$extract_type	 = $this->_extractType;
 		$prefix			 = $this->_prefix;
-		$val			 = self::_controlStatementForStatic();
+		$val			 = self::_controlStatement();
 
 		if (self::$_isClosure) {
 			$val['if'] = function($bool, $t_body, $f_body) use ($vars, $extract_type, $prefix) {
-						$body = $bool ? "t_body" : "f_body";
-						if ($$body) {
-							if (is_callable($$body)) {
-								return call_user_func($$body);
+						$body	 = $bool ? $t_body : $f_body;
+						$ret	 = '';
+						if ($body) {
+							if (is_callable($body)) {
+								$ret = call_user_func($body);
 							}
 							else {
-								$pste			 = new PhpStringTemplateEngine($$body, $vars, $extract_type, $prefix);
-								return $pste->expand();
+								$pste			 = new PhpStringTemplateEngine($body, $vars, $extract_type, $prefix);
+								$ret			 = $pste->expand();
 							}
 						}
+						return $ret;
 					};
 			$val['while']	 = function ($terms, $body) use ($vars, $extract_type, $prefix) {
-						$ret = "";
+						$ret = '';
 						if ($terms && is_callable($terms)) {
 							while ($bool = call_user_func($terms, $bool)) {
 								if (is_callable($body)) {
@@ -122,9 +154,9 @@ class PhpStringTemplateEngine {
 			$val['time'] = function($time, $body) use ($vars, $extract_type, $prefix) {
 						if (!is_array($time)) {
 							$time	 = intval($time);
-							$time	 = 0 < $time ? array_fill(1, intval($time), "") : array();
+							$time	 = 0 < $time ? array_fill(1, $time, '') : array();
 						}
-						$ret = "";
+						$ret = '';
 						foreach ($time as $key => $val) {
 							if (is_callable($body)) {
 								$ret .= call_user_func($body, $key, $val);
