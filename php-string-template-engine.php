@@ -58,7 +58,7 @@ class PhpStringTemplateEngine {
 			return '';
 		}
 
-		extract($this->_createCcontrolStatement());
+		extract($this->_createCcontrolStatements());
 
 		if (!empty($this->_vars)) {
 			extract($this->_vars, $this->_extractType, $this->_prefix);
@@ -91,22 +91,22 @@ class PhpStringTemplateEngine {
 	 * 制御関数
 	 * 
 	 * @method _controlStatement
-	 * @staticvar null $val
+	 * @staticvar null $static_control_statements
 	 * @return array
 	 */
-	static private function _controlStatement() {
-		static $val = null;
-		if (null === $val) {
-			$arr = array(
-				'set'	 => create_function('&$var,$val', '$var=$val;'),
-				'echo'	 => create_function('', 'return implode(\'\',func_get_args());'),
-				'if'	 => create_function('$bool,$t_body,$f_body', '$ret = \'\';$body = $bool ? $t_body : $f_body;if ($body){ if (is_callable($body)){ $ret = call_user_func($body); }else{ $ret = $body; } } return $ret;'),
-				'while'	 => create_function('$terms,$body', '$ret = \'\'; if ($terms && is_callable($terms)){ while ($bool = call_user_func($terms, $bool)){ if (is_callable($body)){ $ret .= call_user_func($body); }else{ $ret .= $body; } } } return $ret;'),
-				'time'	 => create_function('$time,$body', 'if (!is_array($time)){ $time = intval($time); $time = 0 < $time ? array_fill(1,intval($time),\'\') : array(); } $ret = \'\'; foreach($time as $key => $val){ if (is_callable($body)){ $ret .= call_user_func($body, $key, $val); }else{ $ret .= $body; } } return $ret;'),
+	static private function _controlStatements() {
+		static $static_control_statements = null;
+		if (null === $static_control_statements) {
+			$control_statements = array(
+				'set'						 => create_function('&$var,$val', '$var=$val;'),
+				'echo'						 => create_function('', 'return implode(\'\',func_get_args());'),
+				'if'						 => create_function('$bool,$t_body,$f_body', '$ret = \'\';$body = $bool ? $t_body : $f_body;if ($body){ if (is_callable($body)){ $ret = call_user_func($body); }else{ $ret = $body; } } return $ret;'),
+				'while'						 => create_function('$terms,$body', '$ret = \'\'; if ($terms && is_callable($terms)){ while ($bool = call_user_func($terms, $bool)){ if (is_callable($body)){ $ret .= call_user_func($body); }else{ $ret .= $body; } } } return $ret;'),
+				'time'						 => create_function('$time,$body', 'if (!is_array($time)){ $time = intval($time); $time = 0 < $time ? array_fill(1,intval($time),\'\') : array(); } $ret = \'\'; foreach($time as $key => $val){ if (is_callable($body)){ $ret .= call_user_func($body, $key, $val); }else{ $ret .= $body; } } return $ret;'),
 			);
-			$val	 = $arr;
+			$static_control_statements	 = $control_statements;
 		}
-		return $val;
+		return $static_control_statements;
 	}
 
 	/**
@@ -117,14 +117,14 @@ class PhpStringTemplateEngine {
 	 * @method _createCcontrolStatement
 	 * @return array
 	 */
-	private function &_createCcontrolStatement() {
-		$vars			 = $this->_vars;
-		$extract_type	 = $this->_extractType;
-		$prefix			 = $this->_prefix;
-		$val			 = self::_controlStatement();
+	private function &_createCcontrolStatements() {
+		$vars				 = $this->_vars;
+		$extract_type		 = $this->_extractType;
+		$prefix				 = $this->_prefix;
+		$control_statements	 = self::_controlStatements();
 
 		if (self::$_isClosure) {
-			$val['if'] = function($bool, $t_body, $f_body) use ($vars, $extract_type, $prefix) {
+			$control_statements['if'] = function($bool, $t_body, $f_body) use ($vars, $extract_type, $prefix) {
 						$ret	 = '';
 						$body	 = $bool ? $t_body : $f_body;
 						if ($body) {
@@ -132,13 +132,13 @@ class PhpStringTemplateEngine {
 								$ret = call_user_func($body);
 							}
 							else {
-								$pste			 = new PhpStringTemplateEngine($body, $vars, $extract_type, $prefix);
-								$ret			 = $pste->expand();
+								$pste						 = new PhpStringTemplateEngine($body, $vars, $extract_type, $prefix);
+								$ret						 = $pste->expand();
 							}
 						}
 						return $ret;
 					};
-			$val['while']	 = function ($terms, $body) use ($vars, $extract_type, $prefix) {
+			$control_statements['while'] = function ($terms, $body) use ($vars, $extract_type, $prefix) {
 						$ret = '';
 						if ($terms && is_callable($terms)) {
 							while ($bool = call_user_func($terms, $bool)) {
@@ -146,14 +146,14 @@ class PhpStringTemplateEngine {
 									$ret .= call_user_func($body);
 								}
 								else {
-									$pste		 = new PhpStringTemplateEngine($body, $vars, $extract_type, $prefix);
+									$pste						 = new PhpStringTemplateEngine($body, $vars, $extract_type, $prefix);
 									$ret .= $pste->expand();
 								}
 							}
 						}
 						return $ret;
 					};
-			$val['time'] = function($time, $body) use ($vars, $extract_type, $prefix) {
+			$control_statements['time']	 = function($time, $body) use ($vars, $extract_type, $prefix) {
 						if (!is_array($time)) {
 							$time	 = intval($time);
 							$time	 = 0 < $time ? array_fill(1, $time, '') : array();
@@ -171,7 +171,7 @@ class PhpStringTemplateEngine {
 						return $ret;
 					};
 		}
-		return $val;
+		return $control_statements;
 	}
 
 }
