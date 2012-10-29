@@ -7,6 +7,8 @@
  * @copyright	Copyright &copy; 2012 nulil
  * @link		http://nulil.github.com
  * @license	MIT License (http://www.opensource.org/licenses/mit-license.php)
+ * 
+ * @version 0.1.2
  */
 class PhpStringTemplateEngine {
 
@@ -97,7 +99,7 @@ class PhpStringTemplateEngine {
 		if (null === $val) {
 			$arr = array(
 				'set'	 => create_function('&$var,$val', '$var=$val;'),
-				'echo'	 => create_function('$val', 'return $val;'),
+				'echo'	 => create_function('', 'return implode(\'\',func_get_args());'),
 				'if'	 => create_function('$bool,$t_body,$f_body', '$ret = \'\';$body = $bool ? $t_body : $f_body;if ($body){ if (is_callable($body)){ $ret = call_user_func($body); }else{ $ret = $body; } } return $ret;'),
 				'while'	 => create_function('$terms,$body', '$ret = \'\'; if ($terms && is_callable($terms)){ while ($bool = call_user_func($terms, $bool)){ if (is_callable($body)){ $ret .= call_user_func($body); }else{ $ret .= $body; } } } return $ret;'),
 				'time'	 => create_function('$time,$body', 'if (!is_array($time)){ $time = intval($time); $time = 0 < $time ? array_fill(1,intval($time),\'\') : array(); } $ret = \'\'; foreach($time as $key => $val){ if (is_callable($body)){ $ret .= call_user_func($body, $key, $val); }else{ $ret .= $body; } } return $ret;'),
